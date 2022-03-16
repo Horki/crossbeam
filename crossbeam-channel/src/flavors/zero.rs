@@ -241,10 +241,10 @@ impl<T> Channel<T> {
         Context::with(|cx| {
             // Prepare for blocking until a receiver wakes us up.
             let oper = Operation::hook(token);
-            let mut packet = Packet::<T>::message_on_stack(msg);
+            let packet = Packet::<T>::message_on_stack(msg);
             inner
                 .senders
-                .register_with_packet(oper, &mut packet as *mut Packet<T> as *mut (), cx);
+                .register_with_packet(oper, &packet as *const Packet<T> as *mut (), cx);
             inner.receivers.notify();
             drop(inner);
 
@@ -310,12 +310,10 @@ impl<T> Channel<T> {
         Context::with(|cx| {
             // Prepare for blocking until a sender wakes us up.
             let oper = Operation::hook(token);
-            let mut packet = Packet::<T>::empty_on_stack();
-            inner.receivers.register_with_packet(
-                oper,
-                &mut packet as *mut Packet<T> as *mut (),
-                cx,
-            );
+            let packet = Packet::<T>::empty_on_stack();
+            inner
+                .receivers
+                .register_with_packet(oper, &packet as *const Packet<T> as *mut (), cx);
             inner.senders.notify();
             drop(inner);
 
